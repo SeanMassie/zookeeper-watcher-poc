@@ -108,11 +108,13 @@ public class ZookeeperConfigurationIT {
     public void multiHitChildWatcher() throws Exception {
         int sleepMsBetweenRetries = 100;
         int maxRetries = 3;
-        String key = "/testing";
-        String expected = "my_value";
         RetryPolicy retryPolicy = new RetryNTimes(maxRetries, sleepMsBetweenRetries);
         CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", retryPolicy);
         client.start();
+
+        if (client.checkExists().forPath("/test") == null) {
+            client.create().forPath("/test");
+        }
 
         PathChildrenCache pathChildrenCache = new PathChildrenCache(client, "/test", false);
         pathChildrenCache.start();
@@ -129,6 +131,10 @@ public class ZookeeperConfigurationIT {
         client.setData().forPath("/test/first-record", "firstUpdate".getBytes());
 
         await().until(() -> updatedPaths.contains("/test/first-record"));
+
+        if (client.checkExists().forPath("/test/second-record") == null) {
+            client.create().forPath("/test/second-record");
+        }
 
         client.setData().forPath("/test/second-record", "firstUpdate".getBytes());
 
