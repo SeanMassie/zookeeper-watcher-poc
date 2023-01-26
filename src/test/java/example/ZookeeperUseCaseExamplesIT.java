@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 /**
  * These test go through simple use cases with the apache curator library
  */
-public class ZookeeperConfigurationIT {
+public class ZookeeperUseCaseExamplesIT {
 
     @Test
     public void setAndGetDataFromZookeeper() throws Exception {
