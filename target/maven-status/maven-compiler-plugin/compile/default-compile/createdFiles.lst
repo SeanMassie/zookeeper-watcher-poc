@@ -1,0 +1,5 @@
+example/resources/ZookeeperState.class
+example/resources/ZookeeperResource.class
+example/resources/TestHealthCheck.class
+example/zookeeperWatcherApiApplication.class
+example/zookeeperWatcherApiConfiguration.class
