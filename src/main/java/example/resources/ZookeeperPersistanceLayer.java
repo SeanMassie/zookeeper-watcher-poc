@@ -41,6 +41,7 @@ public class ZookeeperPersistanceLayer {
         this.mapper = new ObjectMapper();
 
         try {
+            // check if parent node directory exists, if not create it
             if (this.client.checkExists().forPath(this.zookeeperPath) == null) {
                 this.client.create().forPath(this.zookeeperPath);
             }
@@ -74,7 +75,7 @@ public class ZookeeperPersistanceLayer {
         Optional<CustomerCohort> cohort = Optional.empty();
         try {
             if (this.checkIfChildNodeExistsByUUID(cohortId)) {
-                byte[] cohortBytes = this.client.getData().forPath(this.zookeeperPath);
+                byte[] cohortBytes = this.client.getData().forPath(this.buildZookeeperChildPath(cohortId));
                 cohort = Optional.of(this.mapper.readValue(new String(cohortBytes), CustomerCohort.class));
             }
         } catch (Exception e) {

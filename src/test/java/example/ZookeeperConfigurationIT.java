@@ -6,13 +6,10 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.x.async.AsyncCuratorFramework;
 import org.junit.Test;
 
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 import static org.awaitility.Awaitility.await;
@@ -28,13 +25,15 @@ public class ZookeeperConfigurationIT {
     public void setAndGetDataFromZookeeper() throws Exception {
         int sleepMsBetweenRetries = 100;
         int maxRetries = 3;
-        RetryPolicy retryPolicy
-                = new RetryNTimes(maxRetries, sleepMsBetweenRetries);
-        CuratorFramework client = CuratorFrameworkFactory
-                .newClient("127.0.0.1:2181", retryPolicy);
+        RetryPolicy retryPolicy = new RetryNTimes(maxRetries, sleepMsBetweenRetries);
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", retryPolicy);
         client.start();
 
-        client.create().forPath("/head", "testing".getBytes());
+        if (client.checkExists().forPath("/head") == null) {
+            client.create().forPath("/head", "testing".getBytes());
+        } else {
+            client.setData().forPath("/head", "testing".getBytes());
+        }
         String output = new String(client.getData().forPath("/head"));
         assertTrue("testing".equals(output));
     }
@@ -43,10 +42,8 @@ public class ZookeeperConfigurationIT {
     public void singleWatcherExample() {
         int sleepMsBetweenRetries = 100;
         int maxRetries = 3;
-        RetryPolicy retryPolicy
-                = new RetryNTimes(maxRetries, sleepMsBetweenRetries);
-        CuratorFramework client = CuratorFrameworkFactory
-                .newClient("127.0.0.1:2181", retryPolicy);
+        RetryPolicy retryPolicy = new RetryNTimes(maxRetries, sleepMsBetweenRetries);
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", retryPolicy);
         client.start();
         AsyncCuratorFramework async = AsyncCuratorFramework.wrap(client);
         String key = "/test";
@@ -84,6 +81,10 @@ public class ZookeeperConfigurationIT {
         CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", retryPolicy);
         client.start();
 
+        if (client.checkExists().forPath(key) == null) {
+           client.create().forPath(key);
+        }
+
         List<String> changes = new ArrayList<>();
         NodeCache nodeCache = new NodeCache(client, key);
         nodeCache.start();
@@ -119,11 +120,18 @@ public class ZookeeperConfigurationIT {
 
         pathChildrenCache.getListenable().addListener((curator, event) -> {
             updatedPaths.add(event.getData().getPath());
-            System.out.println("hit");
         });
 
-        client.create().forPath("/test/second-record", "firstUpdate".getBytes());
+        if (client.checkExists().forPath("/test/first-record") == null) {
+            client.create().forPath("/test/first-record");
+        }
+
+        client.setData().forPath("/test/first-record", "firstUpdate".getBytes());
 
         await().until(() -> updatedPaths.contains("/test/first-record"));
+
+        client.setData().forPath("/test/second-record", "firstUpdate".getBytes());
+
+        await().until(() -> updatedPaths.contains("/test/second-record"));
     }
 }
