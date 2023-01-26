@@ -11,3 +11,10 @@ Health Check
 ---
 
 To see your applications health enter url `http://localhost:8081/healthcheck`
+
+Integration Tests
+---
+
+In order to run integration tests you must first boot up zookeeper 
+
+`docker-compose up`
